@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 
-	"~/scripts/golang/GOre/grpcapi"
+	"google.golang.org/grpc"
 )
 
 // create a struct for handling commands
