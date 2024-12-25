@@ -4,10 +4,17 @@
 //if the API is not defined in this proto file, then it is disregarded. lurv it.
 //additionally, this is a schema, not a full implimentation; in Golang this is interface-like in nature.
 //to complie the schema to a binary go can understand, we run the command " protoc -I . implant.proto --go_out=plugins=grpc:./" in the /grpcapi directory.
-//previous command is depreciated, use "protoc --go-grpc_out=. ./implant.proto" instead to generate the file in it's own directory.  
+//previous command is depreciated, use "protoc --go-grpc_out=. ./implant.proto" instead to generate the file in it's own directory. 
+
+/*OK, so I think I am close, but for some reason, This is not compiling to the proper file. I downloaded an already compiled version and it seems to work. I think it's my compilation syntax, 
+ and whatever I am doing is preventing me from compiling these commands. Turns out it is semi-depreciated commands. The way to get this to wokr is to first invoke "go install github.com/golang/protobuf/protoc-gen-go" to get
+ the OG package, then afterwards, you can use the command "protoc --go_out=plugins=grpc:. implant.proto". You also need to install the other dependencies, with the following commands: 
+ $ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+ $ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+ */
 syntax = "proto3";
 package grpcapi; //tells the compiler that we want to keep the artifacts; the name is arbitrary, we just need to name it something reasonable to compile and invoke with the other binaries.
-option go_package = "./implant";
+option go_package = "gore/grpcapi";
 //Implant defines the C2 API functions
 service Implant {
     rpc FetchCommand (Empty) returns (Command);

