@@ -88,6 +88,8 @@ func main() {
 		opts                           []grpc.ServerOption   //server options
 		work, output                   chan *grpcapi.Command //work and output goroutines
 	)
+	//load file and read TLS data
+
 	//create channels for passing input and output commands to implant and admin services
 	work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)
 	//instantiate a new implant to act as a device client and an admin server. We're doing this on the same channel, so IPC between them is shared on the same goroutine.
@@ -95,13 +97,15 @@ func main() {
 	admin := NewAdminServer(work, output) //both share the same work and output
 	//open and bind port 5000 on localhost on the server to listen to commands over tcp, check if nil and log a fatal error if so
 	if implantListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 5000)); err != nil {
+		fmt.Println("[-] implantListener has failed.")
 		log.Fatal(err)
 	}
 	//do the same for an admin server, with a differnet port of course
 	if adminListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 9090)); err != nil {
+		fmt.Println("[-] adminListener has failed.")
 		log.Fatal(err)
 	}
-	//the "..." operator implies an input with a variable number of inputs, kinda like explicit function overloading
+	//the "..." operator implies an input with a variable number of inputs, kinda like explicit function overloading. We declare that opts might have more variables associated with them than we specify.
 	grpcAdminServer, grpcImplantServer := grpc.NewServer(opts...), grpc.NewServer(opts...)
 	//register the servers. Do note we never explicitly defined these, protoc did. By compiling our .proto file, it gave us Golang functions for fri.
 	grpcapi.RegisterImplantServer(grpcImplantServer, implant)
