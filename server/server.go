@@ -86,8 +86,6 @@ func (s *implantServer) RegisterNewImplant(ctx context.Context, uuid_result *grp
 	fmt.Println(res) //this works, but prints the Hex/memory not the value as a string, I think...
 	fmt.Println(uuidstr)
 	fmt.Println("[+] Recieved new registration request")
-	//fmt.Printf("%s\n", res.Uuid)
-	//basic return
 	return &grpcapi.Empty{}, nil
 }
 
@@ -131,6 +129,7 @@ func main() {
 	go func() {
 		grpcImplantServer.Serve(implantListener)
 	}()
+	//admin server is not multithreaded, only one is allowed.
 	grpcAdminServer.Serve(adminListener)
 
 }
