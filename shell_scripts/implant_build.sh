@@ -12,7 +12,7 @@ echo "
 
 if [ $# -ne 3 ] || [ "$1" == "-h" ]; then
     echo "
-    [:] This script is invoked as '$0 <ip> <port> <name>' and needs each of these arguments to correctly run. 
+    [:] This script is invoked as '$0 <ip/hostname> <port> <name>' and needs each of these arguments to correctly run. 
     [:] you can see this help text by invoking the '-h' flag
     "
     exit 0

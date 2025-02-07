@@ -60,6 +60,7 @@ func main() {
 	}*/
 	//new version with compile injection
 	if conn, err = grpc.Dial(fmt.Sprintf("%s:%d", ip, port_num), opts...); err != nil {
+
 		log.Fatal(err)
 	}
 
