@@ -17,7 +17,7 @@ package grpcapi; //tells the compiler that we want to keep the artifacts; the na
 option go_package = "gore/grpcapi";
 //Implant defines the C2 API functions. Our implant is our little client.
 service Implant {
-    rpc FetchCommand (Empty) returns (Command);
+    rpc SendCommand (Registration) returns (Command);
     rpc SendOutput (Command) returns (Empty);
     rpc RegisterNewImplant(Registration) returns (Empty); //added to handle sending a uuid to the server.
 }

