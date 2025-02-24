@@ -6,8 +6,15 @@ import (
 	"gore/grpcapi"
 	"log"
 	"os"
+	"strconv"
 
 	"google.golang.org/grpc"
+)
+
+// compile-time variables
+var (
+	server_ip   string
+	server_port string
 )
 
 /*we invoke this as "go run client/glient.go" and the second input is the command we want to run on our implant(s). */
@@ -19,10 +26,10 @@ func main() {
 		err    error
 		client grpcapi.AdminClient
 	)
-	//var uuid_flag bool = false //assume no UUID is given, send to all bots
-
+	//convert string port to int
+	port_num, _ := strconv.Atoi(server_port)
 	opts = append(opts, grpc.WithInsecure())
-	if conn, err = grpc.Dial(fmt.Sprintf("localhost:%d", 9090), opts...); err != nil {
+	if conn, err = grpc.Dial(fmt.Sprintf("%s:%d", server_ip, port_num), opts...); err != nil {
 		log.Fatal(err)
 	}
 	//clean on close
