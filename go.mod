@@ -1,6 +1,7 @@
 module gore
 
-go 1.23.3
+//used to be 1.23.3
+go 1.24.0
 
 require (
 	google.golang.org/grpc v1.69.2

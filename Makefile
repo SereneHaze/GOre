@@ -11,7 +11,7 @@ debug:
 	go build -o ${CLIENT_BINARY} -ldflags=" -X 'main.server_ip=localhost' -X 'main.server_port=9090'" client/client.go
 
 #custom build with specified values; this will typically connect to the internet so be EXTRA sure you know what you're doing 
-build:
+custom:
 	go build -o ${SERVER_BINARY} -ldflags=" -X 'main.server_ip=${SERVER_IP}' -X 'main.server_port=${SERVER_PORT}' -X 'main.operator_port=${OPERATOR_PORT}'" server/server.go
 	go build -o ${CLIENT_BINARY} -ldflags="-X 'main.server_ip=${SERVER_IP}' -X 'main.server_port=${OPERATOR_PORT}'" client/client.go
 #removal of compiled server/operator binaries. Removal of implants is more manual.

