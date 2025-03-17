@@ -105,7 +105,7 @@ func main() {
 				instr.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 			}*/
 		}
-		//create comnined output of command to sned to implant
+		//create combined output of command to sned to implant
 		buffer, err := instr.CombinedOutput()
 		if err != nil {
 			cmd.Out = err.Error()
