@@ -1,30 +1,30 @@
 ## GOre RAT
-GOre is a personal project to make a RAT/C2 in Golang with some C scripts if I want. Basically, it will be an attempt to learn go through a super fun
-project. GOre is a portmanteu of "Go rev" or "go reverse". It is also based on the RAT from Blackhat GO, and indeed in it's most basic form it is a 1:1 copy of that program's source code. It is not a FULL copy, as there
-are some dependencies that I needed to add to get this thing to compile properly. 
+GOre is a remote access trojan that uses build-time obfuscation do avoid detection and hinder dissasembly. There are 3 parts to the C2 framework: Malicious implant,
+server, and admin operator client. The client forwards commands to the server, which is added to a "work" channel, that each implant reaches out for to recieve said
+commands and execute them on a victim machine.
 
-The RAT cosists of three distinct pieces: a server for communicating with a (singular for the moment) implant, an Operator client to issue commands to the server (to rely them to an implant) and the implant whihc operates on the
-victims device. The implant is the device that needs to be loaded onto a victim, the server exists on some external service, and the client can be run locally on a machine, through a VPN if you'd like.
+## Implant
+Each implant has a compile-time UUID, as well as a self-signed certificate that it uses to secure communications to the server. If you don't use the garble wrapper, 
+the chances of detection become almost certain. The certificate and UUID are present in the binary, meaning a determined security analyst could reverse engineer the 
+network traffic and the GRPC connections.
 
-## client
-the client communicates with the server, which acts as a VIA to the implant. This binary is for the malware operators.
-## CLIENT TODO
-- encrypt client to server communications
-- add better command support, IE run the binary and input commands like a shell
-- allow for multiple operators to communicate without cross polination of output/input
+## Server
+The server acts as a middle-man to the client and implants. It adds commands to a queue that is accessed by all implnats in a "reverse-backdoor" fashion; each implant
+reaches out to the server for work, instead of listening on a port passivly for commands.
 
-## implant 
-the implant is "implanted" onto the device to facilitate c2 commuication to the server. The implant only talks to the server, not to ay client operators directly. It runs OS commads directly on the victim as the victim. Does
-not support pipes, as it is a bit raw on how it hadles command parsing.
-## IMPLANT TODO
+## Client
+The client is a simple and fast implimentation to send commands to the server and recieve an output. This is not built with security in mind, as it is assumed that
+you will not be using this on the same network that the implant is on. This is something to fix in the future,
 
-## server
-## SERVER TODO
+## Build guide
+The first thing todo is to use the `cert_gen.sh` shell script to automatically generate self-signed certs used by the framework. You are free to use your own certificates,
+you must place them in the correct folders prior to generating the server and implants. The next step is to use the command `make custom` to generate server and client
+binaries. You can go into the makefile and manually change the data for this, as it is somewhat assumed that this is a "build-once-run-many" program. After this is done,
+you are able to produce implants eitehr manually, with the `implant_build.sh` shell script, or automatically with your own custom shell script or wrapper for my shell script.
 
-## building an executable from source:
-`go build -o <exec-name> -ldflags="-w -s -buildid=" -trimpath <path/to/source_file>`
-or use the given shell script with `./shell_scripts/implant_build.sh`
--maybe add "-H=windowsgui" after trimpath to make the implant a windowless application
 
-## build windows from linux archetecture: 
-`env GOOS=windows GOARCH=amd64 go build -o win_implant -ldflags="-X 'main.uuid=TESTINGUUID' -X 'main.ip=localhost' -X 'main.port_str=5000'-w -s -buildid=" -trimpath ./implant/implant.go`
+## Disclaimer
+This tool is a passion project of mine, as well as an educational tool. It is not intended for use to access computers or systems that you do not have prior permission
+to access. This program is presented AS IS, with no warranty. 
+
+Basically, don't be an idiot. This is a hacktool, if you use it illegally you will very likley face leagal reprucssions. Use the power for good, and never for evil.
