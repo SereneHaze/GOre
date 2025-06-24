@@ -41,7 +41,7 @@ var client_key []byte
 //go:embed client.pem
 var client_pem []byte
 
-//go:embed cacert.pem
+//go:embed CAcert.pem
 var cacert_pem []byte
 
 func main() {

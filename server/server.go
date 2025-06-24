@@ -32,7 +32,7 @@ var server_pem []byte
 //go:embed server.key
 var server_key []byte
 
-//go:embed cacert.pem
+//go:embed CAcert.pem
 var cacert_pem []byte
 
 /*It should be said, I think that these commands are invoked automatically, based on the RPC that was recieved, as the server decides what to do and when to do it. We don't invoke these explicitly, yet they are invoked.*/
