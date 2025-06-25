@@ -1,4 +1,5 @@
 #!/bin/bash
+#this is not printing as nicely as I want it to.
 echo "  
   ________              _________                __   
  /  _____/  ____   ____ \_   ___ \  ____________/  |_
@@ -6,7 +7,8 @@ echo "
 \    \_\  \  ___/|   |  \     \___\  ___/|  | \/|  |
  \______  /\___  >___|  /\______  /\___  >__|   |__|
         \/     \/     \/        \/     \/          
-		 "
+
+"
 
 echo "[?] This script is intedned to be used in the home directory of the GOre project, and assumes existing folder names."
 

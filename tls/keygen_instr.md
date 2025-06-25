@@ -99,3 +99,9 @@ copmile. the basic directory structure should look like:
 
 As of now there is no shell script to make this an easy and automated process, but one will be added in future builds.
 
+
+## Some Extra Notes
+
+Replace the CN and the IP of the `alt_names` section in the server's csr.conf file with the DNS and the IP of the server. The client CN seems to not really matter.
+
+I have the defaults set to localhost.

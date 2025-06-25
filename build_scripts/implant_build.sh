@@ -46,7 +46,7 @@ if [ "$4" == "-tls" ]; then
                                                                                                                      
 	[ dn ]                                                                                                               
 	C = US                                                                                                               
-	CN = localhost                                                                                                          
+	CN = client                                                                                                          
                                                                                                                      
 	[ req_ext ]
 	keyUsage = keyEncipherment
@@ -78,7 +78,7 @@ echo "[+] Cleaning up client TLS files."
 	echo "[:] Removed client.key"
 	rm ./implant/cacert.pem
 	echo "[:] Removed cacert.pem"
-	rm ./implant/CAcert.srl client.csr csrclient.conf
+	rm ./implant/CAcert.srl ./implant/client.csr ./implant/csrclient.conf 
 	echo "[:] Removed CAcert.srl, client.csr, csrclient.conf."
 fi
 echo "[:] Terminating shell script"
