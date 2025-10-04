@@ -1,12 +1,12 @@
 #!/bin/bash
 #this is not printing as nicely as I want it to.
-echo "  
+echo "
   ________              _________                __   
- /  _____/  ____   ____ \_   ___ \  ____________/  |_
-/   \  ____/ __ \ /    \/    \  \/_/ __ \_  __ \   __\
-\    \_\  \  ___/|   |  \     \___\  ___/|  | \/|  |
- \______  /\___  >___|  /\______  /\___  >__|   |__|
-        \/     \/     \/        \/     \/          
+ /  _____/  ____   ____ \_   ___ \  ____________/  |_ 
+/   \  ____/ __ \ /    \/    \  \/_/ __ \_  __ \   __\\
+\    \_\  \  ___/|   |  \     \___\  ___/|  | \/|  |  
+ \______  /\___  >___|  /\______  /\___  >__|   |__|  
+        \/     \/     \/        \/     \/             
 
 "
 
@@ -25,6 +25,7 @@ echo "[+] CA cert and key generated; CAcer.pem copied to implant directory."
 openssl ecparam -name prime256v1 -genkey -noout -out ./server/server.key
 echo "[+] Generated server .key file."
 #create config file for key singing
+#I believe the fields under [ dn ] are the actually usefull and important ones in both scripts. 
 cat > ./server/csr.conf <<EOF
 [ req ]
 default_bits = 256                                                                             
